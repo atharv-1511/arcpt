@@ -1,0 +1,6 @@
+^\.github$
+^README\.Rmd$
+^LICENSE\.md$
+^\.Rproj\.user$
+^.*\.Rproj$
+^codecov\.yml$
