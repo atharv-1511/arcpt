@@ -72,9 +72,25 @@ coef(result)
 - **AR(1) and AR(2) models**: Detect changes in autoregressive structure
 - **Optional trend**: Include linear trend component
 - **Multiple methods**: PELT (default) or AMOC
-- **Various penalties**: MBIC, BIC, SIC, AIC, and more
+- **Various penalties**: MBIC, BIC, SIC, AIC, Hannan-Quinn, Manual
 - **Comprehensive output**: Changepoint locations, segment coefficients, fitted model
-- **S3 methods**: `print`, `summary`, `plot`, `coef`
+- **S3 methods**: `print`, `summary`, `plot`, `coef`, `cpts.arcpt`, `ncpts.arcpt`
+- **Comprehensive validation**: Extensive input checking with informative error messages
+- **52 unit tests**: Thorough test coverage for reliability
+
+## Test Coverage
+
+The package includes 52 comprehensive tests covering:
+
+- Input validation (data types, NA values, invalid parameters)
+- AR(1) and AR(2) model functionality
+- PELT and AMOC methods
+- All penalty types
+- S3 methods (print, summary, plot, coef)
+- Edge cases (constant data, white noise, near-unit-root)
+- Numerical stability (small/large variance)
+- Multiple changepoint detection
+- Trend + AR combinations
 
 ## Dependencies
 
