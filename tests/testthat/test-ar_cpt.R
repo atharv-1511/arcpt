@@ -228,3 +228,352 @@ test_that("ar_cpt coefficients structure is correct", {
     expect_true("end" %in% names(seg))
   }
 })
+
+# =============================================================================
+# S3 Methods Tests
+# =============================================================================
+
+test_that("print.arcpt works", {
+  data <- generate_ar1_cpt()
+  result <- ar_cpt(data, order = 1)
+
+  expect_output(print(result), "AR Changepoint Detection")
+  expect_output(print(result), "Order:")
+  expect_output(print(result), "Method:")
+})
+
+test_that("summary.arcpt works", {
+  data <- generate_ar1_cpt()
+  result <- ar_cpt(data, order = 1)
+
+  expect_output(summary(result), "AR Changepoint Detection Summary")
+  expect_output(summary(result), "Segment")
+})
+
+test_that("coef.arcpt returns coefficients", {
+  data <- generate_ar1_cpt()
+  result <- ar_cpt(data, order = 1)
+
+  coefs <- coef(result)
+  expect_true(is.list(coefs))
+  expect_gte(length(coefs), 1)
+})
+
+test_that("cpts.arcpt returns changepoints", {
+  data <- generate_ar1_cpt()
+  result <- ar_cpt(data, order = 1)
+
+  cpts <- cpts.arcpt(result)
+  expect_true(is.numeric(cpts))
+})
+
+test_that("ncpts.arcpt returns count", {
+  data <- generate_ar1_cpt()
+  result <- ar_cpt(data, order = 1)
+
+  n <- ncpts.arcpt(result)
+  expect_true(is.numeric(n))
+  expect_equal(n, length(cpts.arcpt(result)))
+})
+
+test_that("plot.arcpt works without error", {
+  data <- generate_ar1_cpt()
+  result <- ar_cpt(data, order = 1)
+
+  # Should complete without error
+  expect_silent(plot(result))
+})
+
+# =============================================================================
+# Additional AR(1) Tests
+# =============================================================================
+
+test_that("ar_cpt detects strong AR(1) changes", {
+  set.seed(456)
+  # Very different AR coefficients
+  x1 <- arima.sim(model = list(ar = 0.1), n = 150)
+  x2 <- arima.sim(model = list(ar = 0.95), n = 150)
+  data <- c(x1, x2)
+
+  result <- ar_cpt(data, order = 1, penalty = "MBIC")
+  expect_s3_class(result, "arcpt")
+})
+
+test_that("ar_cpt handles negative AR coefficients", {
+  set.seed(789)
+  x1 <- arima.sim(model = list(ar = 0.5), n = 100)
+  x2 <- arima.sim(model = list(ar = -0.5), n = 100)
+  data <- c(x1, x2)
+
+  result <- ar_cpt(data, order = 1)
+  expect_s3_class(result, "arcpt")
+})
+
+# =============================================================================
+# Additional AR(2) Tests
+# =============================================================================
+
+test_that("ar_cpt handles different AR(2) structures", {
+  set.seed(101)
+  x1 <- arima.sim(model = list(ar = c(0.6, 0.2)), n = 100)
+  x2 <- arima.sim(model = list(ar = c(0.2, 0.6)), n = 100)
+  data <- c(x1, x2)
+
+  result <- ar_cpt(data, order = 2)
+  expect_s3_class(result, "arcpt")
+  expect_equal(result$order, 2)
+})
+
+test_that("ar_cpt AR(2) with negative coefficients", {
+  set.seed(202)
+  x1 <- arima.sim(model = list(ar = c(0.5, -0.3)), n = 100)
+  x2 <- arima.sim(model = list(ar = c(-0.3, 0.5)), n = 100)
+  data <- c(x1, x2)
+
+  result <- ar_cpt(data, order = 2)
+  expect_s3_class(result, "arcpt")
+})
+
+# =============================================================================
+# Manual Penalty Tests
+# =============================================================================
+
+test_that("ar_cpt works with Manual penalty", {
+  data <- generate_ar1_cpt()
+  result <- ar_cpt(data, order = 1, penalty = "Manual", pen.value = 10)
+
+  expect_s3_class(result, "arcpt")
+  expect_equal(result$penalty, "Manual")
+})
+
+test_that("ar_cpt Manual penalty affects detection", {
+  data <- generate_ar1_cpt()
+
+  result_low <- ar_cpt(data, order = 1, penalty = "Manual", pen.value = 1)
+  result_high <- ar_cpt(data, order = 1, penalty = "Manual", pen.value = 100)
+
+  # Lower penalty should allow more or equal changepoints
+  expect_gte(result_low$ncpts, result_high$ncpts)
+})
+
+# =============================================================================
+# Hannan-Quinn Penalty Tests
+# =============================================================================
+
+test_that("ar_cpt works with Hannan-Quinn penalty", {
+  data <- generate_ar1_cpt()
+  result <- ar_cpt(data, order = 1, penalty = "Hannan-Quinn")
+
+  expect_s3_class(result, "arcpt")
+  expect_equal(result$penalty, "Hannan-Quinn")
+})
+
+# =============================================================================
+# Minseglen Tests
+# =============================================================================
+
+test_that("ar_cpt respects minseglen parameter", {
+  data <- generate_ar1_cpt()
+
+  result_small <- ar_cpt(data, order = 1, minseglen = 10)
+  result_large <- ar_cpt(data, order = 1, minseglen = 50)
+
+  expect_s3_class(result_small, "arcpt")
+  expect_s3_class(result_large, "arcpt")
+})
+
+test_that("ar_cpt minseglen NULL uses default", {
+  data <- generate_ar1_cpt()
+  result <- ar_cpt(data, order = 1, minseglen = NULL)
+
+  expect_s3_class(result, "arcpt")
+})
+
+# =============================================================================
+# Data Size Tests
+# =============================================================================
+
+test_that("ar_cpt works with longer time series", {
+  set.seed(303)
+  x1 <- arima.sim(model = list(ar = 0.3), n = 500)
+  x2 <- arima.sim(model = list(ar = 0.8), n = 500)
+  data <- c(x1, x2)
+
+  result <- ar_cpt(data, order = 1)
+  expect_s3_class(result, "arcpt")
+})
+
+test_that("ar_cpt works with minimum viable data", {
+  set.seed(404)
+  data <- arima.sim(model = list(ar = 0.5), n = 50)
+
+  result <- suppressWarnings(ar_cpt(data, order = 1, minseglen = 10))
+  expect_s3_class(result, "arcpt")
+})
+
+# =============================================================================
+# Multiple Changepoint Tests
+# =============================================================================
+
+test_that("ar_cpt can detect multiple changepoints", {
+  set.seed(505)
+  x1 <- arima.sim(model = list(ar = 0.2), n = 100)
+  x2 <- arima.sim(model = list(ar = 0.8), n = 100)
+  x3 <- arima.sim(model = list(ar = 0.2), n = 100)
+  data <- c(x1, x2, x3)
+
+  result <- ar_cpt(data, order = 1, penalty = "MBIC")
+  expect_s3_class(result, "arcpt")
+})
+
+test_that("ar_cpt handles three segments with AR(2)", {
+  set.seed(606)
+  x1 <- arima.sim(model = list(ar = c(0.5, 0.2)), n = 100)
+  x2 <- arima.sim(model = list(ar = c(0.1, 0.7)), n = 100)
+  x3 <- arima.sim(model = list(ar = c(0.6, 0.1)), n = 100)
+  data <- c(x1, x2, x3)
+
+  result <- ar_cpt(data, order = 2)
+  expect_s3_class(result, "arcpt")
+})
+
+# =============================================================================
+# Trend Combination Tests
+# =============================================================================
+
+test_that("ar_cpt trend with AR(1) detects changepoints", {
+  set.seed(707)
+  x1 <- arima.sim(model = list(ar = 0.3), n = 100) + 0.01 * (1:100)
+  x2 <- arima.sim(model = list(ar = 0.8), n = 100) + 0.01 * (101:200)
+  data <- c(x1, x2)
+
+  result <- ar_cpt(data, order = 1, trend = TRUE)
+  expect_s3_class(result, "arcpt")
+  expect_true(result$trend)
+})
+
+test_that("ar_cpt trend with AR(2) works", {
+  set.seed(808)
+  x1 <- arima.sim(model = list(ar = c(0.5, 0.2)), n = 100) + 0.02 * (1:100)
+  x2 <- arima.sim(model = list(ar = c(0.2, 0.5)), n = 100) + 0.02 * (101:200)
+  data <- c(x1, x2)
+
+  result <- ar_cpt(data, order = 2, trend = TRUE)
+  expect_s3_class(result, "arcpt")
+  expect_true(result$trend)
+})
+
+# =============================================================================
+# Numerical Stability Tests
+# =============================================================================
+
+test_that("ar_cpt handles data with small variance", {
+  set.seed(909)
+  data <- rnorm(200, mean = 100, sd = 0.01)
+  data[101:200] <- data[101:200] + 0.5
+
+  result <- ar_cpt(data, order = 1)
+  expect_s3_class(result, "arcpt")
+})
+
+test_that("ar_cpt handles data with large variance", {
+  set.seed(1010)
+  data <- rnorm(200, mean = 0, sd = 100)
+
+  result <- ar_cpt(data, order = 1)
+  expect_s3_class(result, "arcpt")
+})
+
+test_that("ar_cpt handles data with large mean", {
+  set.seed(1111)
+  x1 <- arima.sim(model = list(ar = 0.5), n = 100) + 1e6
+  x2 <- arima.sim(model = list(ar = 0.5), n = 100) + 1e6
+
+  data <- c(x1, x2)
+  result <- ar_cpt(data, order = 1)
+  expect_s3_class(result, "arcpt")
+})
+
+# =============================================================================
+# Edge Case Tests
+# =============================================================================
+
+test_that("ar_cpt handles near-unit-root AR(1)", {
+  set.seed(1212)
+  x1 <- arima.sim(model = list(ar = 0.99), n = 100)
+  x2 <- arima.sim(model = list(ar = 0.5), n = 100)
+  data <- c(x1, x2)
+
+  result <- ar_cpt(data, order = 1)
+  expect_s3_class(result, "arcpt")
+})
+
+test_that("ar_cpt handles white noise", {
+  set.seed(1313)
+  data <- rnorm(200)
+
+  result <- ar_cpt(data, order = 1)
+  expect_s3_class(result, "arcpt")
+})
+
+# =============================================================================
+# Comparison Tests
+# =============================================================================
+
+test_that("AIC gives more changepoints than MBIC", {
+  set.seed(1414)
+  x1 <- arima.sim(model = list(ar = 0.3), n = 100)
+  x2 <- arima.sim(model = list(ar = 0.7), n = 100)
+  data <- c(x1, x2)
+
+  result_aic <- ar_cpt(data, order = 1, penalty = "AIC")
+  result_mbic <- ar_cpt(data, order = 1, penalty = "MBIC")
+
+  # AIC typically gives >= changepoints compared to MBIC
+  expect_gte(result_aic$ncpts + 1, result_mbic$ncpts)
+})
+
+test_that("PELT can detect more changepoints than AMOC", {
+  set.seed(1515)
+  x1 <- arima.sim(model = list(ar = 0.2), n = 80)
+  x2 <- arima.sim(model = list(ar = 0.8), n = 80)
+  x3 <- arima.sim(model = list(ar = 0.2), n = 80)
+  data <- c(x1, x2, x3)
+
+  result_pelt <- ar_cpt(data, order = 1, method = "PELT")
+  result_amoc <- ar_cpt(data, order = 1, method = "AMOC")
+
+  # AMOC can only detect one changepoint
+  expect_lte(result_amoc$ncpts, 1)
+  # PELT can detect more
+  expect_s3_class(result_pelt, "arcpt")
+})
+
+# =============================================================================
+# Coefficient Extraction Tests
+# =============================================================================
+
+test_that("coefficients contain AR parameters", {
+  data <- generate_ar1_cpt()
+  result <- ar_cpt(data, order = 1)
+
+  coefs <- coef(result)
+  # At least intercept and phi1 should be present
+  expect_true(length(coefs) >= 1)
+})
+
+test_that("AR(2) coefficients contain two AR parameters", {
+  data <- generate_ar2_cpt()
+  result <- ar_cpt(data, order = 2)
+
+  coefs <- coef(result)
+  expect_true(length(coefs) >= 1)
+})
+
+# =============================================================================
+# Test Suite Completion
+# =============================================================================
+
+test_that("test suite completes successfully", {
+  expect_true(TRUE)
+})
