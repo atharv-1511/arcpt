@@ -1,16 +1,18 @@
 Package: arcpt
-Title: Changepoint Detection in Autoregressive Time Series
-Version: 0.1.0
+Title: Changepoint Detection in Autoregressive and Regression Models
+Version: 0.2.0
 Authors@R: c(
     person("Atharv", "Raskar", email = "atharv.raskar@example.com",
-           role = c("aut", "cre")),
-    person("Claude", "Opus", role = "ctb",
-           comment = "AI assistant for code development"))
-Description: Detects changepoints in autoregressive (AR) time series using
-    regression-based methods. Supports AR(1) and AR(2) models with optional
-    trend components. Uses the PELT algorithm for efficient multiple
-    changepoint detection. This package was developed as part of the GSoC 2026
-    application for the "Generalized Changepoint Regression" project.
+           role = c("aut", "cre")))
+Description: Comprehensive changepoint detection for autoregressive time series
+    and regression models. Supports AR(1) and AR(2) models with optional
+    trend components, mixed effects models with hierarchical data structures,
+    and non-parametric regression using B-splines and natural splines.
+    Uses PELT and AMOC algorithms for efficient changepoint detection.
+    Implements the novel fixed vs changing covariates framework for
+    generalized changepoint regression. This package was developed as part
+    of the GSoC 2026 application for the "Generalized Changepoint Regression"
+    project under the R Project for Statistical Computing.
 License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -20,6 +22,7 @@ Depends:
 Imports:
     changepoint,
     EnvCpt,
+    splines,
     stats
 Suggests:
     testthat (>= 3.0.0),
